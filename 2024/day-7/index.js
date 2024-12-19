@@ -1,36 +1,48 @@
 const { readFile } = require("../../common/read-file");
 
-const evalLR = (eq) =>
-  eq
-    .split(/\s*(\+|\*)\s*/)
-    .reduce(
-      (r, e, i, a) => (i % 2 ? r : r + (a[i - 1] === "*" ? r * e - r : +e)),
-      0
-    );
-
 function canBeTrue(result, lineValues) {
   const numbers = lineValues.split(" ").map((num) => parseInt(num));
   const operatorCount = numbers.length - 1;
-  const possibilities = Array(2 ** operatorCount)
+  const possibilities = Array(3 ** operatorCount)
     .fill()
     .map((_, i) => {
       const operators = i
-        .toString(2)
+        .toString(3)
         .padStart(operatorCount, "0")
         .replace(/0/g, "*")
-        .replace(/1/g, "+");
+        .replace(/1/g, "+")
+        .replace(/2/g, "c");
       const equation = lineValues
         .split(" ")
-        .map((num, i) => num + (operators[i] || ""))
-        .join("");
+        .map((num, i) => num + (operators[i] ? ` ${operators[i]} ` : ""))
+        .join("")
+        .split(" ");
 
-      return evalLR(equation);
+      let total = 0;
+      let currentOperation = null;
+      for (let value of equation) {
+        if (["*", "+", "c"].includes(value)) {
+          currentOperation = value;
+        } else {
+          const item = parseInt(value);
+          if (currentOperation === "*") {
+            total *= item;
+          } else if (currentOperation === "+") {
+            total += item;
+          } else if (currentOperation === "c") {
+            total = parseInt(`${total}${item}`);
+          } else {
+            total = item;
+          }
+        }
+      }
+      return total;
     });
 
   return possibilities.includes(result);
 }
 
-readFile(`${__dirname}/input.txt`, (data) => {
+readFile(`${__dirname}/example-input.txt`, (data) => {
   const lines = data.split("\n");
 
   let sum = 0;
